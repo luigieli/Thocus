@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Thocus</string>
+    <string name="accessibility_service_desc">Enforces scheduled application lockouts to help manage screen time.</string>
+</resources>
