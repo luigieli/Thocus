@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,12 +39,14 @@ import com.wellbeing.R
 
 class BlockNoticeActivity : ComponentActivity() {
 
+    private val applicationNameState = mutableStateOf("")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         registerBackNavigationGuard()
 
-        val targetPackage = intent.getStringExtra(EXTRA_BLOCKED_PACKAGE) ?: "This application"
-        val applicationName = resolveApplicationName(targetPackage)
+        val initialPackage = intent.getStringExtra(EXTRA_BLOCKED_PACKAGE) ?: "This application"
+        applicationNameState.value = resolveApplicationName(initialPackage)
 
         setContent {
             ThocusTheme {
@@ -52,12 +55,19 @@ class BlockNoticeActivity : ComponentActivity() {
                     color = Color.Black.copy(alpha = 0.75f)
                 ) {
                     NoticeDialog(
-                        applicationName = applicationName,
+                        applicationName = applicationNameState.value,
                         onDismiss = { dismissAndGoHome() }
                     )
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val updatedPackage = intent.getStringExtra(EXTRA_BLOCKED_PACKAGE) ?: "This application"
+        applicationNameState.value = resolveApplicationName(updatedPackage)
     }
 
     private fun registerBackNavigationGuard() {

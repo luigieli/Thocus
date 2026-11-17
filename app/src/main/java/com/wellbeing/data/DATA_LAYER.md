@@ -31,3 +31,4 @@ data class TimeWindowEntity(
 * Focus windows with multiple breaks are saved as a single entity with serialized `breaksCsv` (`HH:mm-HH:mm,HH:mm-HH:mm`), avoiding split entries.
 * The repository must expose an in-memory cached copy of active focus windows for the `AccessibilityService` to check with zero latency.
 * Persistence operations (`saveWindow`, `deleteWindow`) must synchronously refresh `cachedWindows` via `refreshCache()` to prevent stale cache read races.
+* `ScheduleRepository.getInstance(context)` provides a thread-safe singleton decoupled from UI lifecycle, initialized on application process start (`ThocusApplication.onCreate()`) and available to services/receivers.

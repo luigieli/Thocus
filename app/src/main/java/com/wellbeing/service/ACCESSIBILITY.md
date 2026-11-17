@@ -29,10 +29,14 @@ object ForegroundTracker {
 4. Cache `currentPackage = packageName`.
 5. Query `ScheduleEngine.isPackageBlocked(packageName)`.
 6. If blocked:
-   * Launch `BlockNoticeActivity` directly into the foreground.
+   * Immediately invoke `performGlobalAction(GLOBAL_ACTION_HOME)` to minimize the restricted app, guaranteeing dismissal even on aggressive OEM ROMs (e.g. HyperOS/MIUI).
+   * Launch `BlockNoticeActivity` directly into the foreground in an isolated task (`taskAffinity=""`, `launchMode="singleInstance"`).
    * `BlockNoticeActivity` displays the focus lock warning card over a dimmed backdrop.
    * On user dismissal ("Stay Focused" or back press), `BlockNoticeActivity` redirects cleanly to the device Home screen.
 
 ## 5. Invariants
 * Never perform disk IO or DB queries on the main thread inside `onAccessibilityEvent`.
 * Whitelist check must occur before any business logic to prevent lockout bugs.
+* `BlockNoticeActivity` must run in an isolated task affinity (`taskAffinity=""`) so it is never aborted by system transitions (`START_ABORTED` / `isToBackByHome`) associated with `MainActivity`.
+* On service connection (`onServiceConnected`), initialize and warm the repository memory cache.
+* Differentiate between disabled in system settings vs crashed/disconnected services via `AccessibilityChecker`.

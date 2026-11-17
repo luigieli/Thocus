@@ -31,6 +31,7 @@ object DashboardReducer {
         if (hasMissingPermissions) {
             return DashboardState.MissingPermissions(
                 isAccessibilityMissing = !event.isAccessibilityGranted,
+                isAccessibilityCrashed = event.isAccessibilityCrashed,
                 isExactAlarmMissing = !event.isExactAlarmGranted
             )
         }

@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.wellbeing.core.ScheduleEngine
 import com.wellbeing.core.TimeWindow
 import com.wellbeing.data.ScheduleRepository
+import com.wellbeing.service.AccessibilityChecker
 import com.wellbeing.service.BlockerAccessibilityService
 import com.wellbeing.service.BoundaryAlarmScheduler
 import com.wellbeing.service.NeverBlockWhitelist
@@ -30,7 +31,7 @@ class DashboardViewModel(
     val state: StateFlow<DashboardState> = mutableState.asStateFlow()
 
     fun reconcile(context: Context) {
-        val isAccessibilityGranted = BlockerAccessibilityService.instance != null
+        val (isAccessibilityGranted, isAccessibilityCrashed) = resolveAccessibilityStatus(context)
         val isExactAlarmGranted = checkExactAlarmPermission(context)
 
         viewModelScope.launch {
@@ -43,6 +44,7 @@ class DashboardViewModel(
 
             val event = DashboardEvent.StateReconciled(
                 isAccessibilityGranted = isAccessibilityGranted,
+                isAccessibilityCrashed = isAccessibilityCrashed,
                 isExactAlarmGranted = isExactAlarmGranted,
                 isFocusActive = isFocusActive,
                 remainingFocusMinutes = remainingMinutes,
@@ -52,6 +54,18 @@ class DashboardViewModel(
             )
             transition(event)
         }
+    }
+
+    private fun resolveAccessibilityStatus(context: Context): Pair<Boolean, Boolean> {
+        val isConnected = BlockerAccessibilityService.instance != null
+        if (isConnected) {
+            return Pair(true, false)
+        }
+        val isEnabledInSettings = AccessibilityChecker.isServiceEnabledInSettings(context)
+        if (isEnabledInSettings) {
+            return Pair(false, true)
+        }
+        return Pair(false, false)
     }
 
     private fun queryInstalledApplications(context: Context): List<InstalledAppInfo> {

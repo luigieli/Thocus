@@ -1,6 +1,7 @@
 package com.wellbeing.ui
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -65,8 +66,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val database = AppDatabase.getInstance(this)
-        val repository = ScheduleRepository(database.timeWindowDao())
+        val repository = ScheduleRepository.getInstance(this)
         viewModel = DashboardViewModel(repository)
 
         setContent {
@@ -188,15 +188,26 @@ class MainActivity : ComponentActivity() {
                 Text("Setup Required", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(16.dp))
-            AccessibilityWarningCard(state.isAccessibilityMissing)
+            AccessibilityWarningCard(state.isAccessibilityMissing, state.isAccessibilityCrashed)
             Spacer(modifier = Modifier.height(12.dp))
             AlarmWarningCard(state.isExactAlarmMissing)
         }
     }
 
     @Composable
-    private fun AccessibilityWarningCard(isMissing: Boolean) {
-        if (!isMissing) return
+    private fun AccessibilityWarningCard(isMissing: Boolean, isCrashed: Boolean) {
+        if (!isMissing) {
+            return
+        }
+        if (isCrashed) {
+            AccessibilityCrashedCard()
+            return
+        }
+        AccessibilityDisabledCard()
+    }
+
+    @Composable
+    private fun AccessibilityDisabledCard() {
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -211,6 +222,38 @@ class MainActivity : ComponentActivity() {
                     Text("Enable in Settings")
                 }
             }
+        }
+    }
+
+    @Composable
+    private fun AccessibilityCrashedCard() {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Accessibility Service Disconnected", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("The service was stopped by the system. Please toggle Thocus OFF and ON in Settings to reconnect.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                Spacer(modifier = Modifier.height(12.dp))
+                CrashedActionButtons()
+            }
+        }
+    }
+
+    @Composable
+    private fun CrashedActionButtons() {
+        Button(onClick = { openAccessibilitySettings() }, modifier = Modifier.fillMaxWidth()) {
+            Text("Toggle in Settings")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = { openBatteryOptimizationSettings() },
+            colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Battery Optimization Settings")
         }
     }
 
@@ -402,5 +445,17 @@ class MainActivity : ComponentActivity() {
             return
         }
         startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+    }
+
+    private fun openBatteryOptimizationSettings() {
+        try {
+            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+            startActivity(intent)
+        } catch (_: Exception) {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivity(intent)
+        }
     }
 }

@@ -17,6 +17,13 @@
    * Circular Day-of-Week Dots (Android Clock alarm style).
    * Start and Finish time pickers + Break window configuration.
    * Lightweight 120 FPS app item rows with real icons and no technical package names.
+4. Permissions & Service Diagnostics:
+   * **Distinguish Crashed Services**: Differentiate between accessibility service turned off in system settings vs. service enabled in settings but killed by the OS (`instance == null`).
+   * **Actionable Reconnection Guidance**: When crashed/disconnected, instruct user clearly to toggle the switch off and on in Settings.
+   * **OEM Battery Optimization**: Provide quick shortcut to battery optimization settings to prevent OS background task killing.
+5. Block Notice Dialog (`BlockNoticeActivity`):
+   * Isolated Task Affinity: Runs with `taskAffinity=""` and `launchMode="singleInstance"` to prevent task collision and `START_ABORTED` from `isToBackByHome` on OEMs like HyperOS.
+   * Dynamically handles `onNewIntent` to refresh the blocked package name if intercepted repeatedly.
 
 ## 2. Invariants
 * Strict Object Calisthenics: zero `else`, maximum one indentation level per method, methods < 15 lines.

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.wellbeing.core.ScheduleEngine
+import com.wellbeing.core.TimeWindow
 import com.wellbeing.data.ScheduleRepository
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -20,14 +21,16 @@ object BoundaryAlarmScheduler {
 
     const val REQUEST_CODE_WINDOW_BOUNDARY = 1001
 
-    fun scheduleNextBoundary(context: Context) {
+    fun scheduleNextBoundary(
+        context: Context,
+        windows: List<TimeWindow> = ScheduleRepository.getActiveWindowsCached()
+    ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         if (!canScheduleExactAlarms(alarmManager)) {
             return
         }
 
-        val activeWindows = ScheduleRepository.getActiveWindowsCached()
-        val nextBoundary = ScheduleEngine.findNextBoundary(activeWindows, LocalDateTime.now()) ?: return
+        val nextBoundary = ScheduleEngine.findNextBoundary(windows, LocalDateTime.now()) ?: return
 
         val triggerEpochMillis = convertToEpochMillis(nextBoundary)
         val pendingIntent = createBoundaryPendingIntent(

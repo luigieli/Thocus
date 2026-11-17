@@ -1,5 +1,6 @@
 package com.wellbeing.data
 
+import android.content.Context
 import com.wellbeing.core.TimeWindow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +22,7 @@ class ScheduleRepository(
     init {
         // Continuously update memory cache whenever DB updates
         coroutineScope.launch {
+            refreshCache()
             timeWindowDao.getAllWindowsFlow().collect { entities ->
                 cachedWindows = entities.map { TimeWindowMapper.toDomain(it) }
             }
@@ -65,7 +67,34 @@ class ScheduleRepository(
 
     companion object {
         @Volatile
+        private var instance: ScheduleRepository? = null
+
+        @Volatile
         private var cachedWindows: List<TimeWindow> = emptyList()
+
+        fun initialize(context: Context): ScheduleRepository {
+            return getInstance(context)
+        }
+
+        fun getInstance(context: Context): ScheduleRepository {
+            val existing = instance
+            if (existing != null) {
+                return existing
+            }
+            return createInstance(context)
+        }
+
+        @Synchronized
+        private fun createInstance(context: Context): ScheduleRepository {
+            val doubleChecked = instance
+            if (doubleChecked != null) {
+                return doubleChecked
+            }
+            val database = AppDatabase.getInstance(context)
+            val newInstance = ScheduleRepository(database.timeWindowDao())
+            instance = newInstance
+            return newInstance
+        }
 
         /**
          * Zero-overhead in-memory query safe for main-thread accessibility checks.

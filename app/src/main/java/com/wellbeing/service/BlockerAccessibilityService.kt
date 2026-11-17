@@ -5,6 +5,10 @@ import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
 import com.wellbeing.core.ScheduleEngine
 import com.wellbeing.data.ScheduleRepository
+import com.wellbeing.ui.BlockNoticeActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 /**
@@ -23,6 +27,7 @@ class BlockerAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        initializeRepositoryCache()
     }
 
     override fun onDestroy() {
@@ -55,6 +60,9 @@ class BlockerAccessibilityService : AccessibilityService() {
 
     fun enforceBlockIfRestricted(packageName: String) {
         val activeWindows = ScheduleRepository.getActiveWindowsCached()
+        if (activeWindows.isEmpty()) {
+            initializeRepositoryCache()
+        }
         val isBlocked = ScheduleEngine.isPackageBlocked(
             packageName = packageName,
             timeWindows = activeWindows,
@@ -87,14 +95,27 @@ class BlockerAccessibilityService : AccessibilityService() {
     }
 
     private fun executeInterception(packageName: String) {
+        performGlobalAction(GLOBAL_ACTION_HOME)
         showBlockNotice(packageName)
     }
 
     private fun showBlockNotice(packageName: String) {
         val noticeIntent = Intent()
         noticeIntent.setClassName(applicationContext.packageName, "com.wellbeing.ui.BlockNoticeActivity")
-        noticeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        noticeIntent.putExtra("extra_blocked_package", packageName)
+        noticeIntent.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+            Intent.FLAG_ACTIVITY_SINGLE_TOP
+        )
+        noticeIntent.putExtra(BlockNoticeActivity.EXTRA_BLOCKED_PACKAGE, packageName)
         startActivity(noticeIntent)
+    }
+
+    private fun initializeRepositoryCache() {
+        val repository = ScheduleRepository.getInstance(applicationContext)
+        val coroutineScope = CoroutineScope(Dispatchers.IO)
+        coroutineScope.launch {
+            repository.refreshCache()
+        }
     }
 }

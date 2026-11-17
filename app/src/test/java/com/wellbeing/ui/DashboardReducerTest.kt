@@ -24,6 +24,28 @@ class DashboardReducerTest {
         assertTrue(nextState is DashboardState.MissingPermissions)
         val missing = nextState as DashboardState.MissingPermissions
         assertTrue(missing.isAccessibilityMissing)
+        assertFalse(missing.isAccessibilityCrashed)
+    }
+
+    @Test
+    fun `reducer - preserves isAccessibilityCrashed when service was killed by OS`() {
+        val initialState = DashboardState.Loading
+        val event = DashboardEvent.StateReconciled(
+            isAccessibilityGranted = false,
+            isAccessibilityCrashed = true,
+            isExactAlarmGranted = true,
+            isFocusActive = false,
+            remainingFocusMinutes = 0L,
+            activeWindows = emptyList(),
+            blockedPackages = emptySet(),
+            installedApps = emptyList()
+        )
+
+        val nextState = DashboardReducer.reduce(initialState, event)
+        assertTrue(nextState is DashboardState.MissingPermissions)
+        val missing = nextState as DashboardState.MissingPermissions
+        assertTrue(missing.isAccessibilityMissing)
+        assertTrue(missing.isAccessibilityCrashed)
     }
 
     @Test

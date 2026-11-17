@@ -11,6 +11,7 @@ sealed interface DashboardEvent {
 
     data class StateReconciled(
         val isAccessibilityGranted: Boolean,
+        val isAccessibilityCrashed: Boolean = false,
         val isExactAlarmGranted: Boolean,
         val isFocusActive: Boolean,
         val remainingFocusMinutes: Long,
