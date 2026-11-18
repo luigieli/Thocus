@@ -36,8 +36,16 @@ class BootReceiver : BroadcastReceiver() {
             val repository = ScheduleRepository.getInstance(context)
             val windows = repository.refreshCache()
             BoundaryAlarmScheduler.scheduleNextBoundary(context, windows)
+            startMonitorIfPermitted(context)
         } finally {
             pendingResult.finish()
         }
+    }
+
+    private fun startMonitorIfPermitted(context: Context) {
+        if (!UsageAccessChecker.isUsageAccessGranted(context)) {
+            return
+        }
+        UsageMonitorService.start(context)
     }
 }

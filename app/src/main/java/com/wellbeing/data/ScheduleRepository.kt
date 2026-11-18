@@ -2,6 +2,7 @@ package com.wellbeing.data
 
 import android.content.Context
 import com.wellbeing.core.TimeWindow
+import com.wellbeing.service.UsageMonitorService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -10,7 +11,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Repository coordinating Room persistence and an in-memory high-speed cache
- * for zero-latency accessibility interception.
+ * for zero-latency focus window interception.
  *
  * Implements Object Calisthenics: zero 'else', small pure functions.
  */
@@ -24,9 +25,15 @@ class ScheduleRepository(
         coroutineScope.launch {
             refreshCache()
             timeWindowDao.getAllWindowsFlow().collect { entities ->
-                cachedWindows = entities.map { TimeWindowMapper.toDomain(it) }
+                val domainList = entities.map { TimeWindowMapper.toDomain(it) }
+                cachedWindows = domainList
+                notifyMonitorService()
             }
         }
+    }
+
+    private fun notifyMonitorService() {
+        UsageMonitorService.notifyWindowsChanged()
     }
 
     fun getAllWindowsFlow(): Flow<List<TimeWindow>> {

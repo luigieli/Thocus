@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 class WindowBoundaryReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        BlockerAccessibilityService.instance?.enforceImmediateBlock()
+        UsageMonitorService.checkAndEnforceCurrentForeground()
         rescheduleUpcomingBoundaryAsync(context)
     }
 

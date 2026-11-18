@@ -40,9 +40,9 @@ Following Carson Gross's Locality of Behavior (LoB), every package directory own
         │   │   │   └── TimeWindow.kt
         │   │   │
         │   │   ├── service/                 # Android system services & background receivers
-        │   │   │   ├── ACCESSIBILITY.md     # <--- Spec for window interception & foreground cache
+        │   │   │   ├── USAGE_MONITOR.md         # <--- Spec for UsageStats interception & foreground cache
         │   │   │   ├── ALARM_SCHEDULER.md   # <--- Spec for exact boundary alarms & reboot recovery
-        │   │   │   ├── BlockerAccessibilityService.kt
+        │   │   │   ├── UsageMonitorService.kt
         │   │   │   ├── BoundaryAlarmScheduler.kt
         │   │   │   └── WindowBoundaryReceiver.kt
         │   │   │
@@ -73,10 +73,10 @@ The blocker must NEVER intercept or restrict the following package types:
 4. The system launcher (Home screen)
 5. Our own package (`com.wellbeing`)
 
-### B. No Busy-Polling / Battery Protection
-* Never run continuous timer loops, background threads sleeping in loops, or polling services.
-* Timing must always be scheduled through `AlarmManager.setExactAndAllowWhileIdle()`.
-* `AccessibilityService` event types must be scoped strictly to `typeWindowStateChanged` with minimal notification timeouts.
+### B. Battery Protection & Screen Awareness
+* Never run continuous timer loops or polling when the screen is turned OFF.
+* Monitoring is strictly suspended when screen is OFF or when no focus window is active.
+* Boundary timing must always be scheduled through `AlarmManager.setExactAndAllowWhileIdle()`.
 
 ### C. Boot & State Reconciliation
 * The system must register an `ACTION_BOOT_COMPLETED` receiver to reschedule alarms when the device restarts.
