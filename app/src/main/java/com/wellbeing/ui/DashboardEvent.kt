@@ -10,8 +10,8 @@ import com.wellbeing.core.TimeWindow
 sealed interface DashboardEvent {
 
     data class StateReconciled(
-        val isAccessibilityGranted: Boolean,
-        val isAccessibilityCrashed: Boolean = false,
+        val isUsageAccessGranted: Boolean,
+        val isOverlayGranted: Boolean = true,
         val isExactAlarmGranted: Boolean,
         val isFocusActive: Boolean,
         val remainingFocusMinutes: Long,

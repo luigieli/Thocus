@@ -188,72 +188,55 @@ class MainActivity : ComponentActivity() {
                 Text("Setup Required", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(16.dp))
-            AccessibilityWarningCard(state.isAccessibilityMissing, state.isAccessibilityCrashed)
+            UsageAccessWarningCard(state.isUsageAccessMissing)
+            Spacer(modifier = Modifier.height(12.dp))
+            OverlayWarningCard(state.isOverlayMissing)
             Spacer(modifier = Modifier.height(12.dp))
             AlarmWarningCard(state.isExactAlarmMissing)
         }
     }
 
     @Composable
-    private fun AccessibilityWarningCard(isMissing: Boolean, isCrashed: Boolean) {
+    private fun OverlayWarningCard(isMissing: Boolean) {
         if (!isMissing) {
             return
         }
-        if (isCrashed) {
-            AccessibilityCrashedCard()
-            return
-        }
-        AccessibilityDisabledCard()
-    }
-
-    @Composable
-    private fun AccessibilityDisabledCard() {
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Accessibility Service Disabled", fontWeight = FontWeight.Bold)
+                Text("Display Over Other Apps Required", fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Enables instant interception of restricted apps.", style = MaterialTheme.typography.bodySmall)
+                Text("Required by Android to bring the block screen into view and minimize restricted apps.", style = MaterialTheme.typography.bodySmall)
                 Spacer(modifier = Modifier.height(12.dp))
-                Button(onClick = { openAccessibilitySettings() }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Enable in Settings")
+                Button(onClick = { openOverlaySettings() }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Grant Overlay Permission")
                 }
             }
         }
     }
 
     @Composable
-    private fun AccessibilityCrashedCard() {
+    private fun UsageAccessWarningCard(isMissing: Boolean) {
+        if (!isMissing) {
+            return
+        }
         Card(
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Accessibility Service Disconnected", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
+                Text("Usage Access Permission Required", fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("The service was stopped by the system. Please toggle Thocus OFF and ON in Settings to reconnect.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                Text("Allows Thocus to monitor foreground apps and enforce your scheduled focus windows without interfering with banking security.", style = MaterialTheme.typography.bodySmall)
                 Spacer(modifier = Modifier.height(12.dp))
-                CrashedActionButtons()
+                Button(onClick = { openUsageAccessSettings() }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Grant Usage Access")
+                }
             }
-        }
-    }
-
-    @Composable
-    private fun CrashedActionButtons() {
-        Button(onClick = { openAccessibilitySettings() }, modifier = Modifier.fillMaxWidth()) {
-            Text("Toggle in Settings")
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(
-            onClick = { openBatteryOptimizationSettings() },
-            colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Battery Optimization Settings")
         }
     }
 
@@ -436,8 +419,30 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun openAccessibilitySettings() {
-        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+    private fun openOverlaySettings() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return
+        }
+        try {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+        } catch (_: Exception) {
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+        }
+    }
+
+    private fun openUsageAccessSettings() {
+        try {
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivity(intent)
+        } catch (_: Exception) {
+            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+        }
     }
 
     private fun openExactAlarmSettings() {

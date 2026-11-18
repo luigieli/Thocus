@@ -18,8 +18,9 @@
    * Start and Finish time pickers + Break window configuration.
    * Lightweight 120 FPS app item rows with real icons and no technical package names.
 4. Permissions & Service Diagnostics:
-   * **Distinguish Crashed Services**: Differentiate between accessibility service turned off in system settings vs. service enabled in settings but killed by the OS (`instance == null`).
-   * **Actionable Reconnection Guidance**: When crashed/disconnected, instruct user clearly to toggle the switch off and on in Settings.
+   * **Usage Access Permission**: Prompt user to grant `Settings.ACTION_USAGE_ACCESS_SETTINGS` with clear description of why screen time tracking is needed.
+   * **Display Over Other Apps (Overlay)**: Prompt user to grant `Settings.ACTION_MANAGE_OVERLAY_PERMISSION` (`canDrawOverlays`) required by Android 10+ for background interception.
+   * **Exact Alarms**: Check and link to `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM` on Android 12+.
    * **OEM Battery Optimization**: Provide quick shortcut to battery optimization settings to prevent OS background task killing.
 5. Block Notice Dialog (`BlockNoticeActivity`):
    * Isolated Task Affinity: Runs with `taskAffinity=""` and `launchMode="singleInstance"` to prevent task collision and `START_ABORTED` from `isToBackByHome` on OEMs like HyperOS.

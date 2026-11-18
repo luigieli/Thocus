@@ -12,8 +12,8 @@ sealed interface DashboardState {
     data object Loading : DashboardState
 
     data class MissingPermissions(
-        val isAccessibilityMissing: Boolean,
-        val isAccessibilityCrashed: Boolean = false,
+        val isUsageAccessMissing: Boolean,
+        val isOverlayMissing: Boolean = false,
         val isExactAlarmMissing: Boolean
     ) : DashboardState
 

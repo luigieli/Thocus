@@ -27,11 +27,11 @@ object DashboardReducer {
         currentState: DashboardState,
         event: DashboardEvent.StateReconciled
     ): DashboardState {
-        val hasMissingPermissions = !event.isAccessibilityGranted || !event.isExactAlarmGranted
+        val hasMissingPermissions = !event.isUsageAccessGranted || !event.isOverlayGranted || !event.isExactAlarmGranted
         if (hasMissingPermissions) {
             return DashboardState.MissingPermissions(
-                isAccessibilityMissing = !event.isAccessibilityGranted,
-                isAccessibilityCrashed = event.isAccessibilityCrashed,
+                isUsageAccessMissing = !event.isUsageAccessGranted,
+                isOverlayMissing = !event.isOverlayGranted,
                 isExactAlarmMissing = !event.isExactAlarmGranted
             )
         }

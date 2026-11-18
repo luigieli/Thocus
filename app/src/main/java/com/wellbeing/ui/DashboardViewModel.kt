@@ -9,10 +9,10 @@ import androidx.lifecycle.viewModelScope
 import com.wellbeing.core.ScheduleEngine
 import com.wellbeing.core.TimeWindow
 import com.wellbeing.data.ScheduleRepository
-import com.wellbeing.service.AccessibilityChecker
-import com.wellbeing.service.BlockerAccessibilityService
 import com.wellbeing.service.BoundaryAlarmScheduler
 import com.wellbeing.service.NeverBlockWhitelist
+import com.wellbeing.service.UsageAccessChecker
+import com.wellbeing.service.UsageMonitorService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,8 +31,10 @@ class DashboardViewModel(
     val state: StateFlow<DashboardState> = mutableState.asStateFlow()
 
     fun reconcile(context: Context) {
-        val (isAccessibilityGranted, isAccessibilityCrashed) = resolveAccessibilityStatus(context)
+        val isUsageAccessGranted = UsageAccessChecker.isUsageAccessGranted(context)
+        val isOverlayGranted = checkOverlayPermission(context)
         val isExactAlarmGranted = checkExactAlarmPermission(context)
+        startMonitorIfPermitted(context, isUsageAccessGranted)
 
         viewModelScope.launch {
             val allWindows = scheduleRepository.getAllWindows()
@@ -43,8 +45,8 @@ class DashboardViewModel(
             val installedApps = withContext(Dispatchers.IO) { queryInstalledApplications(context) }
 
             val event = DashboardEvent.StateReconciled(
-                isAccessibilityGranted = isAccessibilityGranted,
-                isAccessibilityCrashed = isAccessibilityCrashed,
+                isUsageAccessGranted = isUsageAccessGranted,
+                isOverlayGranted = isOverlayGranted,
                 isExactAlarmGranted = isExactAlarmGranted,
                 isFocusActive = isFocusActive,
                 remainingFocusMinutes = remainingMinutes,
@@ -56,16 +58,18 @@ class DashboardViewModel(
         }
     }
 
-    private fun resolveAccessibilityStatus(context: Context): Pair<Boolean, Boolean> {
-        val isConnected = BlockerAccessibilityService.instance != null
-        if (isConnected) {
-            return Pair(true, false)
+    private fun checkOverlayPermission(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return true
         }
-        val isEnabledInSettings = AccessibilityChecker.isServiceEnabledInSettings(context)
-        if (isEnabledInSettings) {
-            return Pair(false, true)
+        return android.provider.Settings.canDrawOverlays(context)
+    }
+
+    private fun startMonitorIfPermitted(context: Context, isUsageAccessGranted: Boolean) {
+        if (!isUsageAccessGranted) {
+            return
         }
-        return Pair(false, false)
+        UsageMonitorService.start(context)
     }
 
     private fun queryInstalledApplications(context: Context): List<InstalledAppInfo> {
@@ -73,11 +77,10 @@ class DashboardViewModel(
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val resolveList = packageManager.queryIntentActivities(intent, 0)
         val resultList = mutableListOf<InstalledAppInfo>()
-        val ownPackage = context.packageName
 
         for (info in resolveList) {
             val pkg = info.activityInfo.packageName
-            if (NeverBlockWhitelist.isWhitelisted(pkg, ownPackage)) {
+            if (NeverBlockWhitelist.isWhitelisted(context, pkg)) {
                 continue
             }
             val label = info.loadLabel(packageManager).toString()
